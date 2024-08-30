@@ -1,0 +1,416 @@
+import numpy as np # linear algebra
+import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
+
+# Input data files are available in the read-only "../input/" directory
+# For example, running this (by clicking run or pressing Shift+Enter) will list all files under the input directory
+
+import os
+for dirname, _, filenames in os.walk('/kaggle/input'):
+    for filename in filenames:
+        print(os.path.join(dirname, filename))
+
+# You can write up to 20GB to the current directory (/kaggle/working/) that gets preserved as output when you create a version using "Save & Run All" 
+# You can also write temporary files to /kaggle/temp/, but they won't be saved outside of the current session
+
+
+#output:
+/kaggle/input/store-sales-time-series-forecasting/oil.csv
+/kaggle/input/store-sales-time-series-forecasting/sample_submission.csv
+/kaggle/input/store-sales-time-series-forecasting/holidays_events.csv
+/kaggle/input/store-sales-time-series-forecasting/stores.csv
+/kaggle/input/store-sales-time-series-forecasting/train.csv
+/kaggle/input/store-sales-time-series-forecasting/test.csv
+/kaggle/input/store-sales-time-series-forecasting/transactions.csv
+
+#you can use libraries like pandas to read multiple CSV files in one go.
+import pandas as pd
+import os
+
+# CSV file list
+file = "/kaggle/input/store-sales-time-series-forecasting"
+files_csv = [f for f in os.listdir(file) if f.endswith('.csv')]
+
+# read files and concatenate in one dataframe
+dataframes = [pd.read_csv(os.path.join(file, f)) for f in files_csv]
+dataframe_concat = pd.concat(dataframes, ignore_index=True)
+print(dataframe_concat.head())
+
+output:
+         date  dcoilwtico  id  sales type locale locale_name description  \
+0  2013-01-01         NaN NaN    NaN  NaN    NaN         NaN         NaN   
+1  2013-01-02       93.14 NaN    NaN  NaN    NaN         NaN         NaN   
+2  2013-01-03       92.97 NaN    NaN  NaN    NaN         NaN         NaN   
+3  2013-01-04       93.12 NaN    NaN  NaN    NaN         NaN         NaN   
+4  2013-01-07       93.20 NaN    NaN  NaN    NaN         NaN         NaN   
+
+  transferred  store_nbr city state  cluster family  onpromotion  transactions  
+0         NaN        NaN  NaN   NaN      NaN    NaN          NaN           NaN  
+1         NaN        NaN  NaN   NaN      NaN    NaN          NaN           NaN  
+2         NaN        NaN  NaN   NaN      NaN    NaN          NaN           NaN  
+3         NaN        NaN  NaN   NaN      NaN    NaN          NaN           NaN  
+4         NaN        NaN  NaN   NaN      NaN    NaN          NaN           NaN  
+
+#Duplicates can bias the analysis
+dataframe_without_duplicates = dataframe_concat.drop_duplicates()
+#Handle missing values Delete rows or columns with missing values
+# Remove rows with at least one missing value
+dataframe_without_nan = dataframe_concat.dropna()
+
+# Remove columns with at least one missing value
+dataframe_without_nan = dataframe_concat.dropna(axis=1)
+#Fill in missing values
+# Fill the NaN with a specific value
+dataframe_with_filling = dataframe_concat.fillna(0)
+
+#Fill with average
+#dataframe_with_filling = dataframe_concat.fillna(dataframe_concat.mean())
+#Identify non-finite values Before converting, it is important to check if there are NaN or inf values ​​in your DataFrame.
+# check NaN in DataFrame
+print(dataframe_concat.isna().sum())
+
+# check undefined values
+print(dataframe_concat.isin([float('inf'), float('-inf')]).sum())
+
+output:
+date              28566
+dcoilwtico      3141847
+id                85110
+sales            113622
+type            3142618
+locale          3142672
+locale_name     3142672
+description     3142672
+transferred     3142672
+store_nbr         30080
+city            3142968
+state           3142968
+cluster         3142968
+family           113622
+onpromotion      113622
+transactions    3059534
+dtype: int64
+date            0
+dcoilwtico      0
+id              0
+sales           0
+type            0
+locale          0
+locale_name     0
+description     0
+transferred     0
+store_nbr       0
+city            0
+state           0
+cluster         0
+family          0
+onpromotion     0
+transactions    0
+dtype: int64
+
+#Replace non-finite values We can replace non-finite values ​​with specific values ​​(like 0 or the average of a column) before converting them to integers.
+# Replace  NaN by 0
+dataframe_concat['dcoilwtico'] = dataframe_concat['dcoilwtico'].fillna(0)
+
+# Replace infinite values ​​with the maximum or minimum value of a column
+dataframe_concat['dcoilwtico'] = dataframe_concat['dcoilwtico'].replace([float('inf'), float('-inf')], 0)
+
+#Convert to integer Once we have processed the non-finite values, we can convert them to integers without causing an error.
+dataframe_concat['dcoilwtico'] = dataframe_concat['dcoilwtico'].astype(int)
+print(dataframe_concat)
+
+output:
+               date  dcoilwtico  id  sales type locale locale_name  \
+0        2013-01-01           0 NaN    NaN  NaN    NaN         NaN   
+1        2013-01-02          93 NaN    NaN  NaN    NaN         NaN   
+2        2013-01-03          92 NaN    NaN  NaN    NaN         NaN   
+3        2013-01-04          93 NaN    NaN  NaN    NaN         NaN   
+4        2013-01-07          93 NaN    NaN  NaN    NaN         NaN   
+...             ...         ...  ..    ...  ...    ...         ...   
+3143017  2017-08-15           0 NaN    NaN  NaN    NaN         NaN   
+3143018  2017-08-15           0 NaN    NaN  NaN    NaN         NaN   
+3143019  2017-08-15           0 NaN    NaN  NaN    NaN         NaN   
+3143020  2017-08-15           0 NaN    NaN  NaN    NaN         NaN   
+3143021  2017-08-15           0 NaN    NaN  NaN    NaN         NaN   
+
+        description transferred  store_nbr city state  cluster family  \
+0               NaN         NaN        NaN  NaN   NaN      NaN    NaN   
+1               NaN         NaN        NaN  NaN   NaN      NaN    NaN   
+2               NaN         NaN        NaN  NaN   NaN      NaN    NaN  
+3               NaN         NaN        NaN  NaN   NaN      NaN    NaN   
+4               NaN         NaN        NaN  NaN   NaN      NaN    NaN   
+...             ...         ...        ...  ...   ...      ...    ...   
+3143017         NaN         NaN       50.0  NaN   NaN      NaN    NaN   
+3143018         NaN         NaN       51.0  NaN   NaN      NaN    NaN   
+3143019         NaN         NaN       52.0  NaN   NaN      NaN    NaN   
+3143020         NaN         NaN       53.0  NaN   NaN      NaN    NaN   
+3143021         NaN         NaN       54.0  NaN   NaN      NaN    NaN   
+
+         onpromotion  transactions  
+0                NaN           NaN  
+1                NaN           NaN  
+2                NaN           NaN  
+3                NaN           NaN  
+4                NaN           NaN  
+...              ...           ...  
+3143017          NaN        2804.0  
+3143018          NaN        1573.0  
+3143019          NaN        2255.0  
+3143020          NaN         932.0  
+3143021          NaN         802.0  
+
+[3143022 rows x 16 columns]
+df_concat = pd.DataFrame(dataframe_concat)
+
+# replace NaN by 0 in all columns
+df_concat = df_concat.fillna(0)
+
+# replace undefined values by 0 in all columns
+df_concat = df_concat.replace([np.inf, -np.inf], 0)
+
+# convert all columns in integer
+col_convert = ['dcoilwtico', 'store_nbr', 'transactions']
+df_concat[col_convert] = df_concat[col_convert].astype(int)
+
+print(df_concat)
+
+output:
+               date  dcoilwtico   id  sales type locale locale_name  \
+0        2013-01-01           0  0.0    0.0    0      0           0   
+1        2013-01-02          93  0.0    0.0    0      0           0   
+2        2013-01-03          92  0.0    0.0    0      0           0   
+3        2013-01-04          93  0.0    0.0    0      0           0   
+4        2013-01-07          93  0.0    0.0    0      0           0   
+...             ...         ...  ...    ...  ...    ...         ...   
+3143017  2017-08-15           0  0.0    0.0    0      0           0   
+3143018  2017-08-15           0  0.0    0.0    0      0           0   
+3143019  2017-08-15           0  0.0    0.0    0      0           0   
+3143020  2017-08-15           0  0.0    0.0    0      0           0   
+3143021  2017-08-15           0  0.0    0.0    0      0           0   
+
+        description transferred  store_nbr city state  cluster family  \
+0                 0           0          0    0     0      0.0      0   
+1                 0           0          0    0     0      0.0      0   
+2                 0           0          0    0     0      0.0      0   
+3                 0           0          0    0     0      0.0      0   
+4                 0           0          0    0     0      0.0      0   
+...             ...         ...        ...  ...   ...      ...    ...   
+3143017           0           0         50    0     0      0.0      0   
+3143018           0           0         51    0     0      0.0      0   
+3143019           0           0         52    0     0      0.0      0   
+3143020           0           0         53    0     0      0.0      0   
+3143021           0           0         54    0     0      0.0      0   
+
+         onpromotion  transactions  
+0                0.0             0  
+1                0.0             0  
+2                0.0             0  
+3                0.0             0  
+4                0.0             0  
+...              ...           ...  
+3143017          0.0          2804  
+3143018          0.0          1573  
+3143019          0.0          2255  
+3143020          0.0           932  
+3143021          0.0           802  
+
+[3143022 rows x 16 columns]
+
+#this data contains three columns which have variable and numerical values
+
+#We can investigate many statistical ideas, such as time series analysis, correlation analysis, descriptive statistics, and more, in order to conduct a quantitative analysis. Here are some possible analyses that we could carry out:
+
+#Descriptive Statistics will provide summary statistics for each stock in the dataset. We’ll look at measures such as mean, median, standard deviation.
+descriptive_stats = df_concat.groupby("store_nbr")["transactions"].describe()
+print(descriptive_stats)
+
+output:
+             count        mean         std  min  25%  50%  75%     max
+store_nbr                                                             
+0          30080.0    0.000000    0.000000  0.0  0.0  0.0  0.0     0.0
+1          57777.0   44.203801  269.738353  0.0  0.0  0.0  0.0  3023.0
+2          57778.0   55.728841  324.631534  0.0  0.0  0.0  0.0  4060.0
+3          57777.0   92.880385  542.466243  0.0  0.0  0.0  0.0  6085.0
+4          57777.0   43.598785  255.230321  0.0  0.0  0.0  0.0  3589.0
+5          57778.0   40.636176  238.148483  0.0  0.0  0.0  0.0  3468.0
+6          57777.0   53.064299  311.206651  0.0  0.0  0.0  0.0  4256.0
+7          57776.0   51.855321  301.969121  0.0  0.0  0.0  0.0  3023.0
+8          57777.0   80.273656  467.447998  0.0  0.0  0.0  0.0  5261.0
+9          57777.0   60.857469  356.422610  0.0  0.0  0.0  0.0  4624.0
+10         57776.0   28.601720  168.099994  0.0  0.0  0.0  0.0  2242.0
+11         57777.0   68.755526  402.247250  0.0  0.0  0.0  0.0  5018.0
+12         57717.0   33.938909  200.943593  0.0  0.0  0.0  0.0  2363.0
+13         57777.0   27.216782  159.770125  0.0  0.0  0.0  0.0  1795.0
+14         57739.0   39.623998  235.785740  0.0  0.0  0.0  0.0  2510.0
+15         57777.0   38.248750  223.090431  0.0  0.0  0.0  0.0  2314.0
+16         57778.0   25.346983  149.360423  0.0  0.0  0.0  0.0  1861.0
+17         57775.0   39.731458  232.885592  0.0  0.0  0.0  0.0  3176.0
+18         57667.0   35.917908  216.577649  0.0  0.0  0.0  0.0  2623.0
+19         57777.0   36.476262  216.029428  0.0  0.0  0.0  0.0  2370.0
+20         57010.0   24.952447  202.267915  0.0  0.0  0.0  0.0  4500.0
+21         56849.0   14.826840  134.363242  0.0  0.0  0.0  0.0  3354.0
+22         56772.0    8.880364   82.711804  0.0  0.0  0.0  0.0  2412.0
+23         57778.0   30.948994  180.303103  0.0  0.0  0.0  0.0  2236.0
+24         57678.0   61.864246  372.968617  0.0  0.0  0.0  0.0  4353.0
+25         57716.0   26.342124  170.540077  0.0  0.0  0.0  0.0  3401.0
+26         57779.0   18.433324  111.347138  0.0  0.0  0.0  0.0  2184.0
+27         57778.0   43.021340  253.143479  0.0  0.0  0.0  0.0  2455.0
+28         57778.0   33.881304  200.455080  0.0  0.0  0.0  0.0  2498.0
+29         56975.0   17.225941  140.221747  0.0  0.0  0.0  0.0  2599.0
+30         57756.0   20.277201  118.897399  0.0  0.0  0.0  0.0  1443.0
+31         57779.0   39.911456  234.634506  0.0  0.0  0.0  0.0  3594.0
+32         57778.0   18.436533  108.056943  0.0  0.0  0.0  0.0  1497.0
+33         57779.0   30.166721  177.350002  0.0  0.0  0.0  0.0  2489.0
+34         57779.0   66.875820  390.316635  0.0  0.0  0.0  0.0  3636.0
+35         57777.0   19.452187  114.523279  0.0  0.0  0.0  0.0  1676.0
+36         57652.0   30.148633  184.244903  0.0  0.0  0.0  0.0  2586.0
+37         57779.0   42.951920  251.146524  0.0  0.0  0.0  0.0  3056.0
+38         57779.0   49.621004  294.886043  0.0  0.0  0.0  0.0  3577.0
+39         57779.0   41.355544  242.276521  0.0  0.0  0.0  0.0  2987.0
+40         57778.0   37.751307  220.804765  0.0  0.0  0.0  0.0  2263.0
+41         57778.0   30.533179  180.685625  0.0  0.0  0.0  0.0  2413.0
+42         56821.0   14.125869  127.081844  0.0  0.0  0.0  0.0  2368.0
+43         57773.0   37.774670  221.128099  0.0  0.0  0.0  0.0  2850.0
+44         57778.0  125.879972  738.617231  0.0  0.0  0.0  0.0  8359.0
+45         57778.0  107.326578  631.802034  0.0  0.0  0.0  0.0  7305.0
+46         57778.0  103.674634  617.036445  0.0  0.0  0.0  0.0  8001.0
+47         57778.0  113.119353  665.565113  0.0  0.0  0.0  0.0  7727.0
+48         57778.0   88.403631  529.821008  0.0  0.0  0.0  0.0  7044.0
+49         57778.0   79.166863  470.262444  0.0  0.0  0.0  0.0  6600.0
+50         57778.0   75.884316  448.200900  0.0  0.0  0.0  0.0  5456.0
+51         57778.0   49.735436  291.223989  0.0  0.0  0.0  0.0  3572.0
+52         56219.0    4.898575  109.699158  0.0  0.0  0.0  0.0  4209.0
+53         57268.0   20.606307  149.825169  0.0  0.0  0.0  0.0  2737.0
+54         57777.0   25.118819  148.151988  0.0  0.0  0.0  0.0  1811.0
+
+dataframe = pd.DataFrame(df_concat)
+
+# Replace values unconformed by NaN
+dataframe['date'] = dataframe['date'].replace('0', np.nan)
+
+# Convert to datetime while handling errors
+dataframe['date'] = pd.to_datetime(dataframe['date'], format='%Y-%m-%d', errors='coerce')
+
+print(dataframe)
+
+output:
+              date  dcoilwtico   id  sales type locale locale_name  \
+0       2013-01-01           0  0.0    0.0    0      0           0   
+1       2013-01-02          93  0.0    0.0    0      0           0   
+2       2013-01-03          92  0.0    0.0    0      0           0   
+3       2013-01-04          93  0.0    0.0    0      0           0   
+4       2013-01-07          93  0.0    0.0    0      0           0   
+...            ...         ...  ...    ...  ...    ...         ...   
+3143017 2017-08-15           0  0.0    0.0    0      0           0   
+3143018 2017-08-15           0  0.0    0.0    0      0           0   
+3143019 2017-08-15           0  0.0    0.0    0      0           0   
+3143020 2017-08-15           0  0.0    0.0    0      0           0   
+3143021 2017-08-15           0  0.0    0.0    0      0           0   
+
+        description transferred  store_nbr city state  cluster family  \
+0                 0           0          0    0     0      0.0      0   
+1                 0           0          0    0     0      0.0      0   
+2                 0           0          0    0     0      0.0      0   
+3                 0           0          0    0     0      0.0      0   
+4                 0           0          0    0     0      0.0      0   
+...             ...         ...        ...  ...   ...      ...    ...   
+3143017           0           0         50    0     0      0.0      0   
+3143018           0           0         51    0     0      0.0      0   
+3143019           0           0         52    0     0      0.0      0   
+3143020           0           0         53    0     0      0.0      0   
+3143021           0           0         54    0     0      0.0      0   
+
+         onpromotion  transactions  
+0                0.0             0  
+1                0.0             0  
+2                0.0             0  
+3                0.0             0  
+4                0.0             0  
+...              ...           ...  
+3143017          0.0          2804  
+3143018          0.0          1573  
+3143019          0.0          2255  
+3143020          0.0           932  
+3143021          0.0           802  
+
+[3143022 rows x 16 columns]
+
+#will show all rows that have duplicates for the date and store_nbr columns
+duplicates = dataframe[dataframe.duplicated(subset=['date', 'store_nbr'], keep=False)]
+print(duplicates)
+
+output:
+              date  dcoilwtico   id  sales type locale locale_name  \
+0       2013-01-01           0  0.0    0.0    0      0           0   
+29      2013-02-11          97  0.0    0.0    0      0           0   
+30      2013-02-12          97  0.0    0.0    0      0           0   
+64      2013-04-01          97  0.0    0.0    0      0           0   
+73      2013-04-12          91  0.0    0.0    0      0           0   
+...            ...         ...  ...    ...  ...    ...         ...   
+3143017 2017-08-15           0  0.0    0.0    0      0           0   
+3143018 2017-08-15           0  0.0    0.0    0      0           0   
+3143019 2017-08-15           0  0.0    0.0    0      0           0   
+3143020 2017-08-15           0  0.0    0.0    0      0           0   
+3143021 2017-08-15           0  0.0    0.0    0      0           0   
+
+        description transferred  store_nbr city state  cluster family  \
+0                 0           0          0    0     0      0.0      0   
+29                0           0          0    0     0      0.0      0   
+30                0           0          0    0     0      0.0      0   
+64                0           0          0    0     0      0.0      0   
+73                0           0          0    0     0      0.0      0   
+...             ...         ...        ...  ...   ...      ...    ... 
+3143017           0           0         50    0     0      0.0      0   
+3143018           0           0         51    0     0      0.0      0   
+3143019           0           0         52    0     0      0.0      0   
+3143020           0           0         53    0     0      0.0      0   
+3143021           0           0         54    0     0      0.0      0   
+
+         onpromotion  transactions  
+0                0.0             0  
+29               0.0             0  
+30               0.0             0  
+64               0.0             0  
+73               0.0             0  
+...              ...           ...  
+3143017          0.0          2804  
+3143018          0.0          1573  
+3143019          0.0          2255  
+3143020          0.0           932  
+3143021          0.0           802  
+[3141823 rows x 16 columns]
+
+#Aggregate data: If we want to aggregate transactions for duplicate dates, you can use groupby and an aggregation function like sum, mean, etc.
+dataframe = dataframe.groupby(['date', 'store_nbr'])['transactions'].sum().reset_index()
+#Pivot after processing: Once the duplicates have been processed, the pivot can be redone.
+pivot_data = dataframe.pivot(index='date', columns='store_nbr', values='transactions')
+#Let's start with the Time Series Analysis to examine trends and patterns over time, focusing on the store_nbr
+import plotly.express as px
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+import plotly.io as pio
+pio.templates.default = "plotly_white"
+# create a subplot
+fig = make_subplots(rows=1, cols=1)
+
+# Add traces for each store_nbr
+for column in pivot_data.columns:
+    fig.add_trace(
+        go.Scatter(x=pivot_data.index, y=pivot_data[column], name=column),
+        row=1, col=1
+    )
+# Update layout
+fig.update_layout(
+    title_text='Time Series of Transactions',
+    xaxis_title='Date',
+    yaxis_title='Transactions',
+    legend_title='store_nbr',
+    showlegend=True
+)
+
+# Display the graphic
+fig.show()
+
+
+
+
+
